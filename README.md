@@ -12,14 +12,24 @@ Website chat AI với giao diện tiếng Việt, lấy cảm hứng từ trải
 
 **Giới hạn hiện tại:** chưa có tài khoản/đăng nhập, lịch sử chưa đồng bộ giữa thiết bị, chưa có D1/Durable Objects/Agents SDK. Không gửi dữ liệu nhạy cảm. Trước khi mở dịch vụ công khai, hãy bổ sung giới hạn tốc độ và xác thực.
 
-## Triển khai Cloudflare
+## Triển khai Cloudflare tự động
 
-### 1. Cài công cụ
-Cài Node.js LTS từ https://nodejs.org/, sau đó trong thư mục dự án chạy:
+### Cách nhanh nhất: chạy build.sh
+1. Cài Node.js LTS từ https://nodejs.org/ (phiên bản 18 trở lên).
+2. Mở terminal tại thư mục dự án và chạy:
 
 ```bash
-npm install -g wrangler
-wrangler login
+bash build.sh
+```
+
+Script tự kiểm tra Node.js và các tệp cần thiết, chạy Wrangler qua npx, yêu cầu đăng nhập Cloudflare nếu chưa đăng nhập, rồi chạy deploy. Lần đầu có thể cần xác nhận đăng nhập trong trình duyệt. Script không thể tự tạo tài khoản Cloudflare hoặc tự cấp quyền Workers AI.
+
+### Cách thủ công
+Cài Node.js LTS từ https://nodejs.org/, sau đó chạy:
+
+```bash
+npx wrangler login
+npx wrangler deploy
 ```
 
 ### 2. Chạy thử
