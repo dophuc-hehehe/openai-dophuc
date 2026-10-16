@@ -1,62 +1,44 @@
 # Dophuc AI 🇻🇳
 
-Website chat AI với giao diện tiếng Việt, lấy cảm hứng từ trải nghiệm chat của [bonnydark/open-sorce-AI-me](https://github.com/bonnydark/open-sorce-AI-me). Đây là bản triển khai riêng, không sao chép nguyên văn toàn bộ mã nguồn dự án tham khảo.
+Website chat AI tiếng Việt, chạy trên Cloudflare Workers AI và Cloudflare D1.
 
 ## Tính năng
-- Giao diện chat responsive, mặc định tiếng Việt.
-- Gọi Cloudflare Workers AI với mô hình Llama 3.3 70B Instruct.
-- Nhiều cuộc trò chuyện và lịch sử được lưu trong trình duyệt hiện tại bằng `localStorage`.
-- Xuất lịch sử hội thoại ra tệp JSON và xóa lịch sử cục bộ.
-- API kiểm tra trạng thái `GET /api/health`.
-- Worker kiểm tra dữ liệu đầu vào và trả lỗi dễ hiểu bằng tiếng Việt.
+- Đăng ký bằng email/mật khẩu, đăng nhập và đăng xuất.
+- Mật khẩu được băm PBKDF2-SHA-256; session token lưu dạng hash trong D1 và cookie HttpOnly/Secure.
+- Lưu cuộc trò chuyện và tin nhắn trong Cloudflare D1, đồng bộ khi đăng nhập trên thiết bị khác.
+- Chỉ chủ sở hữu mới có thể đọc/xóa hội thoại.
+- Xuất lịch sử chat JSON và giao diện responsive tiếng Việt.
+- Cloudflare Workers AI dùng mô hình Llama 3.3 70B Instruct.
 
-**Giới hạn hiện tại:** chưa có tài khoản/đăng nhập, lịch sử chưa đồng bộ giữa thiết bị, chưa có D1/Durable Objects/Agents SDK. Không gửi dữ liệu nhạy cảm. Trước khi mở dịch vụ công khai, hãy bổ sung giới hạn tốc độ và xác thực.
+## Deploy
+1. Cài Node.js LTS (18+) từ https://nodejs.org/.
+2. Xác nhận database D1 có ID `ec978717-6cf0-4a18-b6f8-32d81799194e` trong tài khoản Cloudflare bạn sẽ dùng. Nếu database chưa tồn tại trong tài khoản đó, hãy tạo D1 database tên `dophuc-ai-db` và cập nhật `database_id` trong `wrangler.toml`.
+3. Chạy:
+   ```bash
+   bash build.sh
+   ```
+   Script đăng nhập Cloudflare nếu cần, áp dụng migration lên D1 từ xa rồi deploy Worker.
+4. Mở URL `workers.dev` mà Wrangler in ra. Tạo tài khoản mới để bắt đầu chat.
 
-## Triển khai Cloudflare tự động
-
-### Cách nhanh nhất: chạy build.sh
-1. Cài Node.js LTS từ https://nodejs.org/ (phiên bản 18 trở lên).
-2. Mở terminal tại thư mục dự án và chạy:
-
-```bash
-bash build.sh
-```
-
-Script tự kiểm tra Node.js và các tệp cần thiết, chạy Wrangler qua npx, yêu cầu đăng nhập Cloudflare nếu chưa đăng nhập, rồi chạy deploy. Lần đầu có thể cần xác nhận đăng nhập trong trình duyệt. Script không thể tự tạo tài khoản Cloudflare hoặc tự cấp quyền Workers AI.
-
-### Cách thủ công
-Cài Node.js LTS từ https://nodejs.org/, sau đó chạy:
-
+### Chạy local
 ```bash
 npx wrangler login
-npx wrangler deploy
+npx wrangler d1 migrations apply dophuc-ai-db --remote
+npx wrangler dev
 ```
 
-### 2. Chạy thử
-```bash
-wrangler dev
-```
-Mở URL local mà Wrangler hiển thị.
-
-### 3. Deploy
-```bash
-wrangler deploy
-```
-Tệp `wrangler.toml` đã cấu hình static assets từ `web/` và binding Workers AI tên `AI`. Tài khoản Cloudflare phải có quyền dùng Workers AI. Nếu mô hình mặc định không khả dụng trên tài khoản, đổi hằng `MODEL` trong `src/index.js` sang mô hình được hỗ trợ.
-
-### 4. Kiểm tra
-Mở `https://TEN-WORKER.TEN-TAI-KHOAN.workers.dev/api/health`. Trường `ai` phải là `true`.
+## Database
+Migration `migrations/0001_initial.sql` tạo bảng `users`, `sessions`, `conversations`, `messages`. Migration được áp dụng tự động khi chạy `build.sh`.
 
 ## API
-- `GET /api/health` — trạng thái dịch vụ và binding AI.
-- `POST /api/chat` — gửi `{"messages":[{"role":"user","content":"Xin chào!"}]}`; vai trò hợp lệ là `user` và `assistant`.
+- `GET /api/health`
+- `POST /api/auth/register` — `{ "email": "...", "password": "ít nhất 10 ký tự" }`
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
+- `GET/POST /api/conversations`
+- `GET/DELETE /api/conversations/:id`
+- `POST /api/chat` — cần đăng nhập và gửi `conversationId` cùng `messages`.
 
-## Cấu trúc
-- `web/index.html` — giao diện chat tiếng Việt.
-- `src/index.js` — Cloudflare Worker và API chat.
-- `wrangler.toml` — cấu hình deploy.
-
-## Nguồn tham khảo
-- https://github.com/bonnydark/open-sorce-AI-me
-- https://developers.cloudflare.com/workers-ai/
-- https://developers.cloudflare.com/workers/static-assets/
+## Bảo mật
+Dùng HTTPS/Cloudflare Workers; cookie session HttpOnly, Secure, SameSite=Lax. Mật khẩu không được lưu nguyên văn. Trước khi mở công khai quy mô lớn, nên thêm rate limiting/chống bot, email verification, đặt lại mật khẩu và chính sách sao lưu/retention. Không commit bí mật vào GitHub.
