@@ -25,7 +25,7 @@ if ! "${WRANGLER[@]}" whoami; then
 fi
 
 info "Áp dụng cấu trúc bảng D1 lên database từ xa..."
-"${WRANGLER[@]}" d1 migrations apply dophuc-ai-db --remote || fail "Không áp dụng được migration D1. Kiểm tra database ID, quyền tài khoản và migrations/."
+"${WRANGLER[@]}" d1 migrations apply ec978717-6cf0-4a18-b6f8-32d81799194e --remote || fail "Không áp dụng được migration D1. Kiểm tra database ID, quyền tài khoản và migrations/."
 info "Triển khai website và API..."
 "${WRANGLER[@]}" deploy
 printf "\n"
