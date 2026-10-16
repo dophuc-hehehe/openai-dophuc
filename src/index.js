@@ -14,10 +14,10 @@ export default {
       if (!Array.isArray(body.messages) || body.messages.length === 0 || body.messages.length > 40) {
         return json({ error: "Hãy gửi từ 1 đến 40 tin nhắn." }, 400);
       }
-      const messages = body.messages.map(m => {
-        if (!m || !["user", "assistant"].includes(m.role) || typeof m.content !== "string") throw new Error("invalid");
-        return { role: m.role, content: m.content.slice(0, 12000) };
-      });
+      if (body.messages.some(m => !m || !["user", "assistant"].includes(m.role) || typeof m.content !== "string")) {
+        return json({ error: "Định dạng tin nhắn không hợp lệ." }, 400);
+      }
+      const messages = body.messages.map(m => ({ role: m.role, content: m.content.slice(0, 12000) }));
       if (messages.some(m => !m.content.trim())) return json({ error: "Tin nhắn không được để trống." }, 400);
       try {
         const result = await env.AI.run(MODEL, {
