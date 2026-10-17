@@ -24,8 +24,13 @@ if ! "${WRANGLER[@]}" whoami; then
   "${WRANGLER[@]}" whoami || fail "Đăng nhập Cloudflare chưa thành công."
 fi
 
-info "Áp dụng cấu trúc bảng D1 lên database từ xa..."
-"${WRANGLER[@]}" d1 migrations apply dophuc-ai-db --remote || fail "Không áp dụng được migration D1. Kiểm tra database ID, quyền tài khoản và migrations/."
+info "Kiểm tra D1 trong wrangler.toml..."
+grep -F 'database_name = "dophuc-ai-db"' wrangler.toml >/dev/null || fail "wrangler.toml chưa khai báo database_name = dophuc-ai-db."
+grep -F 'database_id = "ec978717-6cf0-4a18-b6f8-32d81799194e"' wrangler.toml >/dev/null || warn "Database ID trong wrangler.toml khác ID dự kiến; sẽ dùng ID khai báo trong file."
+info "Thông tin D1 trong cấu hình:"
+grep -A4 '^\[\[d1_databases\]\]' wrangler.toml
+info "Áp dụng cấu trúc bảng D1 từ xa bằng đúng cấu hình của repo..."
+"${WRANGLER[@]}" d1 migrations apply dophuc-ai-db --remote --config ./wrangler.toml || fail "Không áp dụng được migration D1. Kiểm tra Cloudflare account đang đăng nhập, database ID trong wrangler.toml và migrations/."
 info "Triển khai website và API..."
 "${WRANGLER[@]}" deploy
 printf "\n"
