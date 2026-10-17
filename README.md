@@ -23,7 +23,7 @@ Website chat AI tiếng Việt, chạy trên Cloudflare Workers AI và Cloudflar
 ### Chạy local
 ```bash
 npx wrangler login
-npx wrangler d1 migrations apply ec978717-6cf0-4a18-b6f8-32d81799194e --remote
+npx wrangler d1 migrations apply dophuc-ai-db --remote
 npx wrangler dev
 ```
 
